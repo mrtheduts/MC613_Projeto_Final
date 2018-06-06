@@ -55,40 +55,21 @@ architecture comportamento of controle is
 		reset							=> '0',
 		clock_out					=> CLOCK_DIV
 	);
-		
-	kb_ctrl: entity work.kbdex_ctrl 
-	port map(
-		ps2_data							=> PS2_DAT,
-		ps2_clk							=> PS2_CLK,
-		clk								=> CLOCK_50,
-		en									=> KEY(1),
-		resetn							=> KEY(2),
-		lights							=> "000",
-		key_on							=> key_on,
-		key_code							=> key_code
-	);
 	
-	kb_alphanum: entity work.kbd_alphanum
+	keybd_call: entity work.keyboard_call_toplevel
 	port map(
-		clk								=> CLOCK_50,
-		key_on							=> key_on(0),
-		key_code							=> key_code(15 downto 0),
-		numpad_elevator				=> numpad_elevator,
-		call_elevator 					=> call_elevator
-	);
-	cll_ctrl: entity work.call_ctrl
-	port map(
-		clk 	 							=> CLOCK_50,
-		call_elevator 					=> call_elevator,
-		numpad_elevator 				=> numpad_elevator,
+		clk 								=> CLOCK_50,
+		PS2_DAT 							=> PS2_DAT,
+		PS2_CLK							=> PS2_CLK,
+		KEY								=> KEY,
 		andares_req_up_in				=> botao_subir,
 		andares_req_down_in			=> botao_descer,
 		andares_dest_in				=> bloco,
 		andares_req_up_out 			=> botao_subir2,
 		andares_req_down_out 		=> botao_descer2,
 		andares_dest_out				=> bloco2
-	);
-	
+  );
+
 	-- bloco: guarda todos os andares destino
 	bloco <= bloco2 and (not mascara_bloco) when(estado /= inicio) else x"00";
 	
