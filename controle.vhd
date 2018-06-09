@@ -36,7 +36,7 @@ architecture comportamento of controle is
 		 bloco							=> bloco,
 		 botao_subir					=> botao_subir,
 		 botao_descer					=> botao_descer,
-		 andar							=> andar,
+		 andar							=> andar+1,
 		 CLOCK_50   					=> CLOCK_50,
 		 KEY    							=> KEY(0 downto 0),
 		 VGA_R							=> VGA_R,
@@ -103,8 +103,8 @@ architecture comportamento of controle is
 					mascara_descida(andar) <= '1';
 				else
 					preciso_parar_d <= '0';
-					mascara_bloco <= "00000000";
-					mascara_descida <= "00000000";
+					mascara_bloco <= x"00";
+					mascara_descida <= x"00";
 				end if;
 			end if;
 		end if;
@@ -133,22 +133,26 @@ architecture comportamento of controle is
 		
 	process (CLOCK_50)
 		variable flag_subindo : std_logic;
+--		variable andar_const : integer;
 	begin
+--		andar_const := andar;
 		if CLOCK_50'event and CLOCK_50 = '1' then
 			if (estado = subindo) then
 				flag_subindo := '0';
 				for i in 7 downto 0 loop -- onde eh zero era andar
-					if(botao_subir(i) = '1') then
+					if((botao_subir(i) = '1' or bloco(i) = '1') and i > andar) then
 						flag_subindo := '1';
 						menor_andar <= i;
 					end if;
 				end loop;
-				
+
 				if(flag_subindo = '1') then
 					continua_subindo <= '1';
 				else
 					continua_subindo <= '0';
 				end if;
+				
+--				flag_subindo := 0;
 			end if;
 		end if;
 	end process;
@@ -156,12 +160,14 @@ architecture comportamento of controle is
 	
 	process (CLOCK_50)
 		variable flag_descendo : std_logic;
+--		variable andar_const : integer;
 	begin
+--		andar_const := andar;
 		if CLOCK_50'event and CLOCK_50 = '1' then
 			if (estado = descendo) then
 				flag_descendo := '0';
 				for i in 0 to 7 loop --onde eh zero era andar
-					if(botao_descer(i) = '1') then
+					if((botao_descer(i) = '1' or bloco(i) = '1') and i < andar) then
 						flag_descendo := '1';
 						maior_andar <= i;
 					end if;
@@ -172,9 +178,12 @@ architecture comportamento of controle is
 				else
 					continua_descendo <= '0';
 				end if;
+				
+				continua_descendo := '0';
 			end if;
 		end if;
 	end process;
+	
 	
 	
 	fsm: process (estado, fechar_porta)
@@ -182,43 +191,51 @@ architecture comportamento of controle is
     case estado is
       when inicio        => proximo_estado <= descansando;
 
-      when descansando 	=> if (botao_subir /= x"00") then
-                               proximo_estado <= subindo;
-									elsif (botao_descer /= x"00") then
-									 proximo_estado <= descendo;
+      when descansando 	=> if (botao_subir /= x"00" and botao_descer /= x"00" and bloco /= x"00") then
+										
+										if (continua_subindo = '1') then
+											 proximo_estado <= subindo;
+										else
+										 proximo_estado <= descendo;
+										end if;
+										
 									else
-									 proximo_estado <= descansando;
+										proximo_estado <= descansando;
+										
 									end if;
 
-      when subindo      =>  if(preciso_parar_s = '1') then
+      when subindo      => if(preciso_parar_s = '1') then
 										proximo_estado <= parado;
-									 elsif(continua_subindo = '1') then
-										 proximo_estado <= subindo;
-									 elsif(botao_descer /= x"00") then
-										 proximo_estado <= descendo;
-									 else
-										 proximo_estado <= descansando;
-									 end if;
+									elsif(continua_subindo = '1') then
+										proximo_estado <= subindo;
+									elsif(botao_descer /= x"00") then
+										proximo_estado <= descendo;
+									else
+										proximo_estado <= descansando;
+									end if;
 									 
-									 estado_anterior <= estado;
-									  
-		when descendo      => if(preciso_parar_d = '1') then
+									estado_anterior <= estado;
+									
+		when descendo     => if(preciso_parar_d = '1') then
 										proximo_estado <= parado;
-									 elsif(continua_descendo = '1') then
-										 proximo_estado <= descendo;
-									 elsif(botao_subir /= x"00") then
-										 proximo_estado <= subindo;
-									 else
-										 proximo_estado <= descansando;
-									 end if;
+									elsif(continua_descendo = '1') then
+										proximo_estado <= descendo;
+									elsif(botao_subir /= x"00") then
+										proximo_estado <= subindo;
+									else
+										proximo_estado <= descansando;
+									end if;
 									 
-									 estado_anterior <= estado;
-		when parado     	 => if(fechar_porta = '1') then
-										 proximo_estado <= estado_anterior;
-									 end if;
+									estado_anterior <= estado;
+									
+		when parado     	=>	if(fechar_porta = '1') then
+										proximo_estado <= estado_anterior;
+									else
+										proximo_estado <= parado;
+									end if;
 		
 		-- descanso
-      when others         => proximo_estado <= descansando;
+      when others       => proximo_estado <= descansando;
                              
       
     end case;

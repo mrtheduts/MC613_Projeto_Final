@@ -4,7 +4,8 @@ use ieee.std_logic_unsigned.all;
 
 entity vga_ball is
   port (
-	 bloco							: in 	std_logic_vector(7 downto 0);
+	 dest_subida					: in 	std_logic_vector(7 downto 0);
+	 dest_descida					: in 	std_logic_vector(7 downto 0);
 	 botao_subir					: in 	std_logic_vector(7 downto 0);
 	 botao_descer					: in 	std_logic_vector(7 downto 0);
 	 andar							: in 	integer range 1 to 8;
@@ -19,6 +20,7 @@ end vga_ball;
 
 architecture comportamento of vga_ball is
 	
+	signal bloco : std_logic_vector(7 downto 0);
 	signal cor_normal, cor_chamada, ligado, desligado, preto: std_logic_vector(2 downto 0);
 --	signal bloco, botao_subir, botao_descer: std_logic_vector(7 downto 0);
 
@@ -114,7 +116,7 @@ begin  -- comportamento
 	cor_normal <= "111"; -- branco
 	cor_chamada <= "001"; -- azul
 	preto <= "000"; -- preto
-	
+	bloco <= dest_subida or dest_descida;
 --	-- teste
 --	botao_subir(7 downto 0) <= "01101001";
 --	botao_descer(7 downto 0) <= "11000100";
