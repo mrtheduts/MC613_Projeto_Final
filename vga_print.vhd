@@ -2,7 +2,7 @@ library ieee;
 use ieee.std_logic_1164.all;
 use ieee.std_logic_unsigned.all;
 
-entity vga_ball is
+entity vga_print is
   port (
 	 dest_subida					: in 	std_logic_vector(7 downto 0);
 	 dest_descida					: in 	std_logic_vector(7 downto 0);
@@ -16,42 +16,31 @@ entity vga_ball is
     VGA_BLANK_N, VGA_SYNC_N   : out std_logic;
     VGA_CLK                   : out std_logic
     );
-end vga_ball;
+end vga_print;
 
-architecture comportamento of vga_ball is
+architecture comportamento of vga_print is
 	
 	signal bloco : std_logic_vector(7 downto 0);
 	signal cor_normal, cor_chamada, ligado, desligado, preto: std_logic_vector(2 downto 0);
---	signal bloco, botao_subir, botao_descer: std_logic_vector(7 downto 0);
 
   -- Interface com a memória de vídeo do controlador
 
---  signal we : std_logic;                        -- write enable ('1' p/ escrita)
 	signal addr : integer range 0 to 12287;       -- endereco mem. vga
 	signal pixel : std_logic_vector(2 downto 0);  -- valor de cor do pixel
 	signal pixel_bit : std_logic;                 -- um bit do vetor acima
    signal sync, blank: std_logic;
---	signal andar : integer range 1 to 8;
 
-
-  -- Sinais dos contadores de linhas e colunas utilizados para percorrer
-  -- as posições da memória de vídeo (pixels) no momento de construir um quadro.
   
 	signal line : integer range 0 to 95;  -- linha atual
 	signal col : integer range 0 to 127;  -- coluna atual
 
-	signal fim_escrita : std_logic;       -- '1' quando um quadro terminou de ser
+--	signal fim_escrita : std_logic;       -- '1' quando um quadro terminou de ser
                                         -- escrito na memória de vídeo
 
   
 begin  -- comportamento
 
-  -- Aqui instanciamos o controlador de vídeo, 128 colunas por 96 linhas
-  -- (aspect ratio 4:3). Os sinais que iremos utilizar para comunicar
-  -- com a memória de vídeo (para alterar o brilho dos pixels) são
-  -- write_clk (nosso clock), write_enable ('1' quando queremos escrever
-  -- o valor de um pixel), write_addr (endereço do pixel a escrever)
-  -- e data_in (valor do brilho do pixel RGB, 1 bit pra cada componente de cor)
+
   vga_controller: entity work.vgacon port map (
     clk50M       => CLOCK_50,
     rstn         => '1',
@@ -70,15 +59,7 @@ begin  -- comportamento
   VGA_SYNC_N <= NOT sync;
   VGA_BLANK_N <= NOT blank;
 
-  -----------------------------------------------------------------------------
-  -- Processos que controlam contadores de linhas e coluna para varrer
-  -- todos os endereços da memória de vídeo, no momento de construir um quadro.
-  -----------------------------------------------------------------------------
 
-  -- purpose: Este processo conta o número da coluna atual.
-  -- type   : sequential
-  -- inputs : CLOCK_50
-  -- outputs: col
   conta_coluna: process (CLOCK_50)
   begin  -- process conta_coluna
 	if CLOCK_50'event and CLOCK_50 = '1' then  -- rising clock edge
@@ -90,10 +71,7 @@ begin  -- comportamento
     end if;
   end process conta_coluna;
     
-  -- purpose: Este processo conta o número da linha atual.
-  -- type   : sequential
-  -- inputs : CLOCK_50
-  -- outputs: line
+
   conta_linha: process (CLOCK_50)
   begin  -- process conta_linha
     if CLOCK_50'event and CLOCK_50 = '1' then  -- rising clock edge
@@ -117,15 +95,10 @@ begin  -- comportamento
 	cor_chamada <= "001"; -- azul
 	preto <= "000"; -- preto
 	bloco <= dest_subida or dest_descida;
---	-- teste
---	botao_subir(7 downto 0) <= "01101001";
---	botao_descer(7 downto 0) <= "11000100";
---	bloco(7 downto 0) <= "10011010";
---	andar <= 8;
+
 	
   
-  -- purpose: Esse processo define a cor dos pixels a serem impressos
-  -- inputs: CLOCK_50
+  -- Esse processo define a cor dos pixels a serem impressos
   
   imprimindo_tela: process(CLOCK_50)
   begin -- process imprimindo_tela
@@ -347,13 +320,9 @@ begin  -- comportamento
   end process;
   
 	
-	
-	-- talvez retornar esse fim_escrita pra saber que o quadro já foi impresso.
-	-- ver depois de precisa 
-   fim_escrita <= '1' when ((line = 95) and (col = 127))  else '0'; 
+--   fim_escrita <= '1' when ((line = 95) and (col = 127))  else '0'; 
 	
 
---	we <= '1'; 
 
   -- O endereço de memória pode ser construído com essa fórmula simples,
   -- a partir da linha e coluna atual
@@ -361,3 +330,4 @@ begin  -- comportamento
 
   
 end comportamento;
+
